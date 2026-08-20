@@ -1,0 +1,352 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline-2": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr80b_sharedsharepointonline_49593"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_powerbi": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "wf_sharedpowerbi_e856f"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "wf_sharedoffice365_496ff"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_teams": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "wf_sharedteams_6f513"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_an_item_is_created_or_modified": {
+          "recurrence": {
+            "interval": 5,
+            "frequency": "Minute"
+          },
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "metadata": {
+            "operationMetadataId": "8bca893a-69de-493c-961a-900c27e575e8"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+              "table": "954b77fd-9e74-401a-9641-3bec532003d0"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetOnUpdatedItems",
+              "connectionName": "shared_sharepointonline-2"
+            }
+          }
+        }
+      },
+      "actions": {
+        "Condition": {
+          "actions": {
+            "Send_an_HTTP_request_to_SharePoint": {
+              "runAfter": {
+                "Refresh_a_dataset_1": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "f635bfb0-c49d-41f9-a4fc-9e6ca5a59e2a"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                  "parameters/method": "POST",
+                  "parameters/uri": "_api/web/lists/GetByTitle('LeaveRequests')/items(@{triggerBody()?['ID']})",
+                  "parameters/headers": {
+                    "Accept": "application/json;odata=nometadata",
+                    "Content-Type": "application/json;odata=nometadata",
+                    "IF-MATCH": "*",
+                    "X-HTTP-Method": "MERGE"
+                  },
+                  "parameters/body": "{\n  \"DecisionEmailSent\": true\n}"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "HttpRequest",
+                  "connectionName": "shared_sharepointonline-2"
+                }
+              }
+            },
+            "Refresh_a_dataset": {
+              "runAfter": {
+                "Condition_1": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "2950c8a5-450e-4dc0-9c79-9e4f67b443a4"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "10429183-7b40-40a9-b16d-ba3e9f524999",
+                  "datasetid": "beddc1b3-18df-486c-b438-51cebd781e6e"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "RefreshDataset",
+                  "connectionName": "shared_powerbi"
+                }
+              }
+            },
+            "Refresh_a_dataset_1": {
+              "runAfter": {
+                "Refresh_a_dataset": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "53951959-422d-48f6-97bc-93308ad80473"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "10429183-7b40-40a9-b16d-ba3e9f524999",
+                  "datasetid": "47f3f293-08d9-453d-bee6-3321d83adaab"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "RefreshDataset",
+                  "connectionName": "shared_powerbi"
+                }
+              }
+            },
+            "Get_items": {
+              "metadata": {
+                "operationMetadataId": "4ab67a15-8c46-41e3-9f47-28d316ff9900"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                  "table": "ca6922d0-3ccb-4ac3-b4bd-910efc9723ee",
+                  "$filter": "Employee/EMail eq '@{triggerBody()?['Requester/Email']}' and IsActive eq 1",
+                  "$top": 1
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "GetItems",
+                  "connectionName": "shared_sharepointonline-2"
+                }
+              }
+            },
+            "Condition_1": {
+              "actions": {
+                "Condition_2": {
+                  "actions": {
+                    "Send_an_email_(V2)": {
+                      "metadata": {
+                        "operationMetadataId": "66662033-1021-4916-b577-d26e9e2b2379"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/To": "@triggerBody()?['Requester/Email']",
+                          "emailMessage/Subject": "[TESTING ONLY] @{concat(\r\n  'Leave Request ',\r\n  triggerBody()?['Status/Value'],\r\n  ' - ',\r\n  triggerBody()?['LeaveType/Value']\r\n)}",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\">@{triggerBody()?['Requester/DisplayName']}様,</p><p class=\"editor-paragraph\">あなたの休暇申請は@{triggerBody()?['Status/Value']}されました。</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\">休暇の種類</strong></b><b><strong class=\"editor-text-bold\">:</strong></b> @{triggerBody()?['LeaveType/Value']}<br><b><strong class=\"editor-text-bold\">開始日</strong></b><b><strong class=\"editor-text-bold\">:</strong></b> @{formatDateTime(triggerBody()?['StartDate'], 'MMM dd, yyyy')}<br><b><strong class=\"editor-text-bold\">終了日</strong></b><b><strong class=\"editor-text-bold\">:</strong></b> @{formatDateTime(triggerBody()?['EndDate'], 'MMM dd, yyyy')}<br><b><strong class=\"editor-text-bold\">承認者</strong></b><b><strong class=\"editor-text-bold\">:</strong></b> @{triggerBody()?['Approver/DisplayName']}<br><b><strong class=\"editor-text-bold\">決定日</strong></b><b><strong class=\"editor-text-bold\">:</strong></b> @{formatDateTime(triggerBody()?['DecisionOn'], 'MMM dd, yyyy hh:mm tt')}<br><b><strong class=\"editor-text-bold\">方法</strong></b><b><strong class=\"editor-text-bold\">:</strong></b> @{coalesce(triggerBody()?['ApproverComments'], 'No comment provided')}</p><br><p class=\"editor-paragraph\">ありがとうございます.</p>",
+                          "emailMessage/Importance": "Normal"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SendEmailV2",
+                          "connectionName": "shared_office365"
+                        }
+                      }
+                    },
+                    "Post_message_in_a_chat_or_channel": {
+                      "runAfter": {
+                        "Send_an_email_(V2)": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "7ba3d295-a607-4a1f-94f8-75d4618d8a74"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "poster": "Flow bot",
+                          "location": "Chat with Flow bot",
+                          "body/recipient": "@triggerBody()?['Requester/Email']",
+                          "body/messageBody": "<p class=\"editor-paragraph\">@{triggerBody()?['Requester/DisplayName']}様,<br>あなたの休暇申請は@{triggerBody()?['Status/Value']}されました。<br><br>休暇の種類: @{triggerBody()?['LeaveType/Value']}<br>開始日: @{formatDateTime(triggerBody()?['StartDate'], 'MMM dd, yyyy')}<br>終了日: @{formatDateTime(triggerBody()?['EndDate'], 'MMM dd, yyyy')}<br>承認者: @{triggerBody()?['Approver/DisplayName']}<br>決定日: @{formatDateTime(triggerBody()?['DecisionOn'], 'MMM dd, yyyy hh:mm tt')}<br>方法: @{coalesce(triggerBody()?['ApproverComments'], 'No comment provided')}<br><br>ありがとうございます.</p>"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                          "operationId": "PostMessageToConversation",
+                          "connectionName": "shared_teams"
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Send_an_email_(V2)_1": {
+                        "metadata": {
+                          "operationMetadataId": "089fa9c0-6410-4536-8219-e4c9fecfadea"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "emailMessage/To": "@triggerBody()?['Requester/Email']",
+                            "emailMessage/Subject": "[TESTING ONLY] @{concat(\n  'Leave Request ',\n  triggerBody()?['Status/Value'],\n  ' - ',\n  triggerBody()?['LeaveType/Value']\n)}",
+                            "emailMessage/Body": "<p class=\"editor-paragraph\">Hi @{triggerBody()?['Requester/DisplayName']},<br>Your leave request has been @{triggerBody()?['Status/Value']}<br><br>Leave Type: @{triggerBody()?['LeaveType/Value']}<br>Start Date: @{formatDateTime(triggerBody()?['StartDate'], 'MMM dd, yyyy')}<br>End Date: @{formatDateTime(triggerBody()?['EndDate'], 'MMM dd, yyyy')}<br>Approver: @{triggerBody()?['Approver/DisplayName']}<br>Decision Date: @{formatDateTime(triggerBody()?['DecisionOn'], 'MMM dd, yyyy hh:mm tt')}<br>Comments: @{coalesce(triggerBody()?['ApproverComments'], 'No comment provided')}<br><br>Thank you.</p>",
+                            "emailMessage/Importance": "Normal"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                            "operationId": "SendEmailV2",
+                            "connectionName": "shared_office365"
+                          }
+                        }
+                      },
+                      "Post_message_in_a_chat_or_channel_1": {
+                        "runAfter": {
+                          "Send_an_email_(V2)_1": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "72c826df-9051-4d5d-aef5-6d14541b479c"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "poster": "Flow bot",
+                            "location": "Chat with Flow bot",
+                            "body/recipient": "@triggerBody()?['Requester/Email']",
+                            "body/messageBody": "<p class=\"editor-paragraph\">Hi @{triggerBody()?['Requester/DisplayName']},<br>Your leave request has been @{triggerBody()?['Status/Value']}<br><br>Leave Type: @{triggerBody()?['LeaveType/Value']}<br>Start Date: @{formatDateTime(triggerBody()?['StartDate'], 'MMM dd, yyyy')}<br>End Date: @{formatDateTime(triggerBody()?['EndDate'], 'MMM dd, yyyy')}<br>Approver: @{triggerBody()?['Approver/DisplayName']}<br>Decision Date: @{formatDateTime(triggerBody()?['DecisionOn'], 'MMM dd, yyyy hh:mm tt')}<br>Comments: @{coalesce(triggerBody()?['ApproverComments'], 'No comment provided')}<br><br>Thank you.</p>"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                            "operationId": "PostMessageToConversation",
+                            "connectionName": "shared_teams"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@first(body('Get_items')?['value'])?['IsJapanese']",
+                          true
+                        ]
+                      }
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "9f298019-5665-465f-91eb-7b70bc3a2803"
+                  },
+                  "type": "If"
+                }
+              },
+              "runAfter": {
+                "Get_items": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {}
+              },
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@int(length(body('Get_items')?['value']))",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "12e31859-64e8-407c-b85e-ac0e191b19c2"
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {},
+          "else": {
+            "actions": {}
+          },
+          "expression": {
+            "and": [
+              {
+                "not": {
+                  "equals": [
+                    "@triggerBody()?['Status/Value']",
+                    "Pending"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "equals": [
+                    "@triggerBody()?['DecisionEmailSent']",
+                    "@true"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "equals": [
+                    "@triggerBody()?['Status/Value']",
+                    "Cancelled"
+                  ]
+                }
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "0837b192-e320-413e-9eec-a5fec5f69751"
+          },
+          "type": "If"
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

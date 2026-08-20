@@ -1,0 +1,413 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline-1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr80b_sharedsharepointonline_49593"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_teams": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "wf_sharedteams_6f513"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      },
+      "shared_office365-4": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "wf_sharedoffice365_496ff"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_office365-5": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "wf_sharedoffice365_d2d1a"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_teams-1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "wf_sharedteams_d26f5"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_an_item_is_created_or_modified": {
+          "recurrence": {
+            "frequency": "Minute",
+            "interval": 1
+          },
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+              "table": "954b77fd-9e74-401a-9641-3bec532003d0"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetOnUpdatedItems",
+              "connectionName": "shared_sharepointonline-1"
+            }
+          }
+        }
+      },
+      "actions": {
+        "Condition": {
+          "actions": {
+            "Get_items": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                  "table": "ca6922d0-3ccb-4ac3-b4bd-910efc9723ee",
+                  "$filter": "Employee/EMail eq '@{triggerBody()?['Approver/Email']}' and IsActive eq 1",
+                  "$top": 1
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "GetItems",
+                  "connectionName": "shared_sharepointonline-1"
+                }
+              }
+            },
+            "Condition_2": {
+              "actions": {
+                "Condition_3": {
+                  "actions": {
+                    "Post_message_in_a_chat_or_channel": {
+                      "runAfter": {
+                        "Send_an_email_(V2)": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "poster": "Flow bot",
+                          "location": "Chat with Flow bot",
+                          "body/recipient": "@triggerBody()?['Approver/Email']",
+                          "body/messageBody": "<p class=\"editor-paragraph\">@{triggerBody()?['Requester/DisplayName']}さんが@{triggerBody()?['LeaveType/Value']}を申請しました。<br><br>開始日: @{triggerBody()?['StartDate']}<br>終了日: @{triggerBody()?['EndDate']}</p>"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                          "operationId": "PostMessageToConversation",
+                          "connectionName": "shared_teams"
+                        }
+                      }
+                    },
+                    "Send_an_email_(V2)": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/To": "@triggerBody()?['Approver/Email']",
+                          "emailMessage/Subject": "新しい休暇申請　申請者： @{triggerBody()?['Requester/DisplayName']}\n",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\">@{triggerBody()?['Requester/DisplayName']}さんが@{triggerBody()?['LeaveType/Value']}を申請しました。<br><br>開始日: @{triggerBody()?['StartDate']}<br>終了日: @{triggerBody()?['EndDate']}</p>",
+                          "emailMessage/Importance": "Normal"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SendEmailV2",
+                          "connectionName": "shared_office365-4"
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Send_an_email_(V2)_2": {
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "emailMessage/To": "@triggerBody()?['Approver/Email']",
+                            "emailMessage/Subject": "New Leave Request From: @{triggerBody()?['Requester/DisplayName']}",
+                            "emailMessage/Body": "<p class=\"editor-paragraph\">@{triggerBody()?['Requester/DisplayName']} has requested a @{triggerBody()?['LeaveType/Value']}.<br><br>Start Date: @{triggerBody()?['StartDate']}<br>End Date: @{triggerBody()?['EndDate']}</p>",
+                            "emailMessage/Importance": "Normal"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                            "operationId": "SendEmailV2",
+                            "connectionName": "shared_office365-5"
+                          }
+                        }
+                      },
+                      "Post_message_in_a_chat_or_channel_2": {
+                        "runAfter": {
+                          "Send_an_email_(V2)_2": [
+                            "Succeeded"
+                          ]
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "poster": "Flow bot",
+                            "location": "Chat with Flow bot",
+                            "body/recipient": "@triggerBody()?['Approver/Email']",
+                            "body/messageBody": "<p class=\"editor-paragraph\">@{triggerBody()?['Requester/DisplayName']} has requested a @{triggerBody()?['LeaveType/Value']}.<br><br>Start Date: @{triggerBody()?['StartDate']}<br>End Date: @{triggerBody()?['EndDate']}</p>"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                            "operationId": "PostMessageToConversation",
+                            "connectionName": "shared_teams-1"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@first(body('Get_items')?['value'])?['IsJapanese']",
+                          true
+                        ]
+                      }
+                    ]
+                  },
+                  "type": "If"
+                }
+              },
+              "runAfter": {
+                "Get_items": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {}
+              },
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@int(length(body('Get_items')?['value']))",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {},
+          "else": {
+            "actions": {}
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@triggerBody()?['Status/Value']",
+                  "Pending"
+                ]
+              },
+              {
+                "not": {
+                  "equals": [
+                    "@triggerBody()?['ApproverEmailSent']",
+                    "@true"
+                  ]
+                }
+              }
+            ]
+          },
+          "type": "If"
+        },
+        "Condition_1": {
+          "actions": {
+            "Get_items_1": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                  "table": "ca6922d0-3ccb-4ac3-b4bd-910efc9723ee",
+                  "$filter": "Employee/EMail eq '@{triggerBody()?['Requester/Email']}' and IsActive eq 1",
+                  "$top": 1
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "GetItems",
+                  "connectionName": "shared_sharepointonline-1"
+                }
+              }
+            },
+            "Condition_4": {
+              "actions": {
+                "Condition_5": {
+                  "actions": {
+                    "Send_an_email_(V2)_1": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/To": "@triggerBody()?['Approver/Email']",
+                          "emailMessage/Subject": "[TESTING ONLY] 休暇申請が以下の者によって取り消されました: @{triggerBody()?['Requester/DisplayName']}",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\">@{triggerBody()?['Requester/DisplayName']}さんが@{triggerBody()?['LeaveType/Value']}の申請を取り消しました。<br><br>開始日: @{triggerBody()?['StartDate']}<br>終了日: @{triggerBody()?['EndDate']}</p><p class=\"editor-paragraph\"></p>",
+                          "emailMessage/Importance": "Normal"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SendEmailV2",
+                          "connectionName": "shared_office365-4"
+                        }
+                      }
+                    },
+                    "Post_message_in_a_chat_or_channel_1": {
+                      "runAfter": {
+                        "Send_an_email_(V2)_1": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "poster": "Flow bot",
+                          "location": "Chat with Flow bot",
+                          "body/recipient": "@triggerBody()?['Approver/Email']",
+                          "body/messageBody": "<p class=\"editor-paragraph\">@{triggerBody()?['Requester/DisplayName']}さんが@{triggerBody()?['LeaveType/Value']}の申請を取り消しました。<br><br>終了日: @{triggerBody()?['StartDate']}<br>終了日: @{triggerBody()?['EndDate']}</p>"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                          "operationId": "PostMessageToConversation",
+                          "connectionName": "shared_teams"
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Send_an_email_(V2)_3": {
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "emailMessage/To": "@triggerBody()?['Approver/Email']",
+                            "emailMessage/Subject": "[TESTING ONLY] Leave Request Cancelled by: @{triggerBody()?['Requester/DisplayName']}",
+                            "emailMessage/Body": "<p class=\"editor-paragraph\">@{triggerBody()?['Requester/DisplayName']} has cancelled the @{triggerBody()?['LeaveType/Value']} request.<br><br>Start Date: @{triggerBody()?['StartDate']}<br>End Date: @{triggerBody()?['EndDate']}</p>",
+                            "emailMessage/Importance": "Normal"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                            "operationId": "SendEmailV2",
+                            "connectionName": "shared_office365-4"
+                          }
+                        }
+                      },
+                      "Post_message_in_a_chat_or_channel_3": {
+                        "runAfter": {
+                          "Send_an_email_(V2)_3": [
+                            "Succeeded"
+                          ]
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "poster": "Flow bot",
+                            "location": "Chat with Flow bot",
+                            "body/recipient": "@triggerBody()?['Approver/Email']",
+                            "body/messageBody": "<p class=\"editor-paragraph\">@{triggerBody()?['Requester/DisplayName']} has cancelled the @{triggerBody()?['LeaveType/Value']} request.<br><br>Start Date: @{triggerBody()?['StartDate']}<br>End Date: @{triggerBody()?['EndDate']}</p>"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                            "operationId": "PostMessageToConversation",
+                            "connectionName": "shared_teams"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@first(body('Get_items_1')?['value'])?['IsJapanese']",
+                          true
+                        ]
+                      }
+                    ]
+                  },
+                  "type": "If"
+                }
+              },
+              "runAfter": {
+                "Get_items_1": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {}
+              },
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@int(length(body('Get_items_1')?['value']))",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "Condition": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {}
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@triggerBody()?['Status/Value']",
+                  "Cancelled"
+                ]
+              },
+              {
+                "not": {
+                  "equals": [
+                    "@triggerBody()?['CancellationEmailSent']",
+                    "@true"
+                  ]
+                }
+              }
+            ]
+          },
+          "type": "If"
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

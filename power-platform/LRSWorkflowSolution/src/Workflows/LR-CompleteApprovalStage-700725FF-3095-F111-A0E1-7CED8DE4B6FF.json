@@ -1,0 +1,603 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "cr80b_sharedsharepointonline_49593"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "94a97908-ea76-4666-99b7-ba6a10b81dc4"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "number": {
+                  "title": "LeaveRequestID",
+                  "type": "number",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter a number",
+                  "x-ms-content-hint": "NUMBER"
+                },
+                "number_1": {
+                  "title": "ApprovalInstanceID",
+                  "type": "number",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter a number",
+                  "x-ms-content-hint": "NUMBER"
+                },
+                "text": {
+                  "title": "Decision",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_1": {
+                  "title": "ApproverComments",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_2": {
+                  "title": "PerformedByEmail",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": [
+                "number",
+                "number_1",
+                "text",
+                "text_1",
+                "text_2"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Get_ApprovalInstance": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "b158943e-7949-4db5-b06c-39c963a5a2fe"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+              "table": "311bd02d-3479-4e4d-8860-e8411a61204a",
+              "id": "@triggerBody()['number_1']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetItem",
+              "connectionName": "shared_sharepointonline"
+            }
+          }
+        },
+        "Validate_ApprovalInstance": {
+          "actions": {
+            "Get_Active_Approver": {
+              "metadata": {
+                "operationMetadataId": "d5efd13a-8577-4f61-afd7-bb550feaeec8"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                  "table": "96083f0b-c76d-4c78-87ad-bf99a89e526c",
+                  "$filter": "UserEmail eq '@{triggerBody()?['text_2']}' and IsActive eq 1",
+                  "$top": 1
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "GetItems",
+                  "connectionName": "shared_sharepointonline"
+                }
+              }
+            },
+            "Can_Final_Approve": {
+              "runAfter": {
+                "Get_Active_Approver": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "144fa860-f2a9-444c-a0ce-22bf080fc003"
+              },
+              "type": "Compose",
+              "inputs": "@coalesce(first(body('Get_Active_Approver')?['value'])?['CanFinalApprove'], false)"
+            },
+            "Authorize_Approver": {
+              "actions": {
+                "Process_Decision": {
+                  "runAfter": {
+                    "Get_LeaveRequest": [
+                      "Succeeded"
+                    ]
+                  },
+                  "cases": {
+                    "Case": {
+                      "case": "Approve",
+                      "actions": {
+                        "Approve_ApprovalInstance": {
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                              "table": "311bd02d-3479-4e4d-8860-e8411a61204a",
+                              "id": "@outputs('Get_ApprovalInstance')?['body/ID']",
+                              "item/Status/Value": "Approved",
+                              "item/DecidedBy/Claims": "@concat('i:0#.f|membership|', toLower(triggerBody()?['text_2']))",
+                              "item/DecidedByEmail": "@triggerBody()?['text_2']",
+                              "item/Comments": "@triggerBody()?['text_1']",
+                              "item/DecisionDate": "@utcNow()"
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                              "operationId": "PatchItem",
+                              "connectionName": "shared_sharepointonline"
+                            }
+                          }
+                        },
+                        "Get_Next_ApprovalInstance": {
+                          "runAfter": {
+                            "Approve_ApprovalInstance": [
+                              "Succeeded"
+                            ]
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                              "table": "311bd02d-3479-4e4d-8860-e8411a61204a",
+                              "$filter": "@concat(\r\n    'LeaveRequestID eq ',\r\n    string(outputs('Get_ApprovalInstance')?['body/LeaveRequestID']),\r\n    ' and StageNumber eq ',\r\n    string(\r\n        add(\r\n            int(outputs('Get_ApprovalInstance')?['body/StageNumber']),\r\n            1\r\n        )\r\n    )\r\n)",
+                              "$top": 1
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                              "operationId": "GetItems",
+                              "connectionName": "shared_sharepointonline"
+                            }
+                          }
+                        },
+                        "Next_Approval_Stage_Exists": {
+                          "actions": {
+                            "Activate_Next_ApprovalInstance": {
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "parameters": {
+                                  "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                                  "table": "311bd02d-3479-4e4d-8860-e8411a61204a",
+                                  "id": "@first(body('Get_Next_ApprovalInstance')?['value'])?['ID']",
+                                  "item/Status/Value": "Pending",
+                                  "item/AssignedDate": "@utcNow()"
+                                },
+                                "host": {
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                                  "operationId": "PatchItem",
+                                  "connectionName": "shared_sharepointonline"
+                                }
+                              }
+                            },
+                            "Advance_LeaveRequest_Stage": {
+                              "runAfter": {
+                                "Activate_Next_ApprovalInstance": [
+                                  "Succeeded"
+                                ]
+                              },
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "parameters": {
+                                  "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                                  "table": "954b77fd-9e74-401a-9641-3bec532003d0",
+                                  "id": "@outputs('Get_LeaveRequest')?['body/ID']",
+                                  "item/StartDate": "@outputs('Get_LeaveRequest')?['body/StartDate']",
+                                  "item/EndDate": "@outputs('Get_LeaveRequest')?['body/EndDate']",
+                                  "item/Reason": "@outputs('Get_LeaveRequest')?['body/Reason']",
+                                  "item/Status/Value": "Pending",
+                                  "item/CurrentApprovalStage": "@first(body('Get_Next_ApprovalInstance')?['value'])?['StageNumber']",
+                                  "item/CurrentApprovalType": "@first(body('Get_Next_ApprovalInstance')?['value'])?['RequiredPermission']?['Value']",
+                                  "item/CurrentApproverEmail": "@coalesce(first(body('Get_Next_ApprovalInstance')?['value'])?['AssignedApproverEmail'],'')"
+                                },
+                                "host": {
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                                  "operationId": "PatchItem",
+                                  "connectionName": "shared_sharepointonline"
+                                }
+                              }
+                            },
+                            "Respond_Stage_Advanced_Result": {
+                              "runAfter": {
+                                "Advance_LeaveRequest_Stage": [
+                                  "Succeeded"
+                                ]
+                              },
+                              "metadata": {
+                                "operationMetadataId": "de216cfa-8a69-405f-923e-199607857986"
+                              },
+                              "type": "Response",
+                              "kind": "PowerApp",
+                              "inputs": {
+                                "schema": {
+                                  "type": "object",
+                                  "properties": {
+                                    "success": {
+                                      "title": "success",
+                                      "x-ms-dynamically-added": true,
+                                      "type": "boolean"
+                                    },
+                                    "message": {
+                                      "title": "message",
+                                      "x-ms-dynamically-added": true,
+                                      "type": "string"
+                                    }
+                                  },
+                                  "additionalProperties": {}
+                                },
+                                "statusCode": 200,
+                                "body": {
+                                  "success": true,
+                                  "message": "Approval recorded successfully. Request moved to the next approval stage."
+                                }
+                              }
+                            }
+                          },
+                          "runAfter": {
+                            "Get_Next_ApprovalInstance": [
+                              "Succeeded"
+                            ]
+                          },
+                          "else": {
+                            "actions": {}
+                          },
+                          "expression": {
+                            "and": [
+                              {
+                                "greater": [
+                                  "@length(body('Get_Next_ApprovalInstance')?['value'])",
+                                  0
+                                ]
+                              }
+                            ]
+                          },
+                          "type": "If"
+                        }
+                      }
+                    },
+                    "Case 2": {
+                      "case": "Reject",
+                      "actions": {
+                        "Reject_ApprovalInstance": {
+                          "metadata": {
+                            "operationMetadataId": "0a059150-4985-4b76-990f-9b5505c28d6c"
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                              "table": "311bd02d-3479-4e4d-8860-e8411a61204a",
+                              "id": "@outputs('Get_ApprovalInstance')?['body/ID']",
+                              "item/Status/Value": "Rejected",
+                              "item/DecidedBy/Claims": "@concat('i:0#.f|membership|', toLower(triggerBody()?['text_2']))",
+                              "item/DecidedByEmail": "@triggerBody()?['text_2']",
+                              "item/Comments": "@triggerBody()?['text_1']",
+                              "item/DecisionDate": "@utcNow()"
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                              "operationId": "PatchItem",
+                              "connectionName": "shared_sharepointonline"
+                            }
+                          }
+                        },
+                        "Reject_LeaveRequest": {
+                          "runAfter": {
+                            "Reject_ApprovalInstance": [
+                              "Succeeded"
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "de38bec0-4025-4267-81d2-b1ae5d31b6d4"
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                              "table": "954b77fd-9e74-401a-9641-3bec532003d0",
+                              "id": "@outputs('Get_LeaveRequest')?['body/ID']",
+                              "item/StartDate": "@outputs('Get_LeaveRequest')?['body/StartDate']",
+                              "item/EndDate": "@outputs('Get_LeaveRequest')?['body/EndDate']",
+                              "item/Reason": "@outputs('Get_LeaveRequest')?['body/Reason']",
+                              "item/Status/Value": "Rejected",
+                              "item/DecisionOn": "@utcNow()",
+                              "item/CurrentApproverEmail": "@null"
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                              "operationId": "PatchItem",
+                              "connectionName": "shared_sharepointonline"
+                            }
+                          }
+                        },
+                        "Respond_Reject_Result": {
+                          "runAfter": {
+                            "Reject_LeaveRequest": [
+                              "Succeeded"
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "de216cfa-8a69-405f-923e-199607857986"
+                          },
+                          "type": "Response",
+                          "kind": "PowerApp",
+                          "inputs": {
+                            "schema": {
+                              "type": "object",
+                              "properties": {
+                                "success": {
+                                  "title": "success",
+                                  "x-ms-dynamically-added": true,
+                                  "type": "boolean"
+                                },
+                                "message": {
+                                  "title": "message",
+                                  "x-ms-dynamically-added": true,
+                                  "type": "string"
+                                }
+                              },
+                              "additionalProperties": {}
+                            },
+                            "statusCode": 200,
+                            "body": {
+                              "success": true,
+                              "message": "Leave request rejected successfully."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "default": {
+                    "actions": {
+                      "Respond_Invalid_Decision": {
+                        "metadata": {
+                          "operationMetadataId": "ea38309d-9458-4206-823e-32ac9255d304"
+                        },
+                        "type": "Response",
+                        "kind": "PowerApp",
+                        "inputs": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "success": {
+                                "title": "success",
+                                "x-ms-dynamically-added": true,
+                                "type": "boolean"
+                              },
+                              "message": {
+                                "title": "message",
+                                "x-ms-dynamically-added": true,
+                                "type": "string"
+                              }
+                            },
+                            "additionalProperties": {}
+                          },
+                          "statusCode": 200,
+                          "body": {
+                            "success": false,
+                            "message": "Invalid decision. Expected Approve or Reject."
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "expression": "@triggerBody()?['text']",
+                  "metadata": {
+                    "operationMetadataId": "7483559c-9808-4a71-bc86-0380440b80f1"
+                  },
+                  "type": "Switch"
+                },
+                "Get_LeaveRequest": {
+                  "metadata": {
+                    "operationMetadataId": "397c8c82-5b57-4df7-8200-28c5f7f3423a"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                      "table": "954b77fd-9e74-401a-9641-3bec532003d0",
+                      "id": "@triggerBody()?['number']"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetItem",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Can_Final_Approve": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "Respond_Unauthorized_Approver": {
+                    "metadata": {
+                      "operationMetadataId": "4d1e3e29-6cfa-45df-b326-5cc9a44f3d6b"
+                    },
+                    "type": "Response",
+                    "kind": "PowerApp",
+                    "inputs": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "success": {
+                            "title": "success",
+                            "x-ms-dynamically-added": true,
+                            "type": "boolean"
+                          },
+                          "message": {
+                            "title": "message",
+                            "x-ms-dynamically-added": true,
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": {}
+                      },
+                      "statusCode": 200,
+                      "body": {
+                        "success": false,
+                        "message": "You are not authorized to approve or reject this request."
+                      }
+                    }
+                  }
+                }
+              },
+              "expression": {
+                "or": [
+                  {
+                    "and": [
+                      {
+                        "equals": [
+                          "@outputs('Get_ApprovalInstance')?['body/RequiredPermission/Value']",
+                          "Initial"
+                        ]
+                      },
+                      {
+                        "or": [
+                          {
+                            "equals": [
+                              "@outputs('Can_Final_Approve')",
+                              "@true"
+                            ]
+                          },
+                          {
+                            "equals": [
+                              "@outputs('Get_ApprovalInstance')?['body/ApprovedBy/Email']",
+                              "@triggerBody()?['text_2']"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "and": [
+                      {
+                        "equals": [
+                          "@outputs('Get_ApprovalInstance')?['body/RequiredPermission/Value']",
+                          "Final"
+                        ]
+                      },
+                      {
+                        "equals": [
+                          "@outputs('Can_Final_Approve')",
+                          "@true"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "05f3c3d3-3a89-4bef-bcba-77cd8b7ebbb6"
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "Get_ApprovalInstance": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "Respond_Invalid_ApprovalInstance": {
+                "metadata": {
+                  "operationMetadataId": "05949144-b0f5-4453-adf5-60b8b933a58a"
+                },
+                "type": "Response",
+                "kind": "PowerApp",
+                "inputs": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "title": "success",
+                        "x-ms-dynamically-added": true,
+                        "type": "boolean"
+                      },
+                      "message": {
+                        "title": "message",
+                        "x-ms-dynamically-added": true,
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": {}
+                  },
+                  "statusCode": 200,
+                  "body": {
+                    "success": false,
+                    "message": "Approval request is invalid or has already been processed."
+                  }
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@outputs('Get_ApprovalInstance')?['body/LeaveRequestID']",
+                  "@triggerBody()?['number']"
+                ]
+              },
+              {
+                "equals": [
+                  "@outputs('Get_ApprovalInstance')?['body/Status/Value']",
+                  "Pending"
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "88d018be-0701-4bac-9fd8-1bf3b2e59b41"
+          },
+          "type": "If"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

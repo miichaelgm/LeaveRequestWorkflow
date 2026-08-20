@@ -1,0 +1,539 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "cr80b_sharedsharepointonline_49593"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "123495de-8abb-4e02-a5f8-a78a73180b54"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text_1": {
+                  "description": "OldManagerEmail",
+                  "title": "OldManagerEmail",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "text": {
+                  "description": "NewManagerEmail",
+                  "title": "NewManagerEmail",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "number": {
+                  "description": "OldManagerApproverID",
+                  "title": "OldManagerApproverID",
+                  "type": "number",
+                  "x-ms-content-hint": "NUMBER",
+                  "x-ms-dynamically-added": true
+                },
+                "text_2": {
+                  "description": "PerformedByEmail",
+                  "title": "PerformedByEmail",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                }
+              },
+              "required": [
+                "text_1",
+                "text",
+                "number",
+                "text_2"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Get_Assigned_Employees": {
+          "runAfter": {
+            "Initialize_variable_3": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "371fc0e4-6a70-465c-b252-bdd2a78d27fd"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+              "table": "ca6922d0-3ccb-4ac3-b4bd-910efc9723ee",
+              "$filter": "Manager/EMail eq '@{triggerBody()?['text_1']}'"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetItems",
+              "connectionName": "shared_sharepointonline"
+            }
+          }
+        },
+        "Assigned_Employee_Count": {
+          "runAfter": {
+            "Get_Assigned_Employees": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "b0be5fcf-24b1-4f45-a3ef-d0f76a550706"
+          },
+          "type": "Compose",
+          "inputs": "@length(body('Get_Assigned_Employees')?['value'])"
+        },
+        "Has_Assigned_Employees": {
+          "actions": {
+            "Replacement_Manager_Provided": {
+              "actions": {
+                "Reassign_Employees": {
+                  "foreach": "@outputs('Get_Assigned_Employees')?['body/value']",
+                  "actions": {
+                    "Update_Employee_Manager": {
+                      "metadata": {
+                        "operationMetadataId": "fab73c47-28b7-4866-b3a4-43a1ad043784"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                          "table": "ca6922d0-3ccb-4ac3-b4bd-910efc9723ee",
+                          "id": "@items('Reassign_Employees')?['ID']",
+                          "item/SickLeave": "@items('Reassign_Employees')?['SickLeave']",
+                          "item/Vacation": "@items('Reassign_Employees')?['Vacation']",
+                          "item/SickLeaveMax": "@items('Reassign_Employees')?['SickLeaveMax']",
+                          "item/VacationLeaveMax": "@items('Reassign_Employees')?['VacationLeaveMax']",
+                          "item/isJapanese": "@items('Reassign_Employees')?['isJapanese']",
+                          "item/Employee/Claims": "@items('Reassign_Employees')?['Employee']?['Claims']",
+                          "item/Manager/Claims": "@concat(\r\n    'i:0#.f|membership|',\r\n    variables('varNewManagerEmail')\r\n)",
+                          "item/DateEmployed": "@items('Reassign_Employees')?['DateEmployed']",
+                          "item/IsActive": "@items('Reassign_Employees')?['IsActive']"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "operationId": "PatchItem",
+                          "connectionName": "shared_sharepointonline"
+                        }
+                      }
+                    }
+                  },
+                  "metadata": {
+                    "operationMetadataId": "bee16412-ef0e-48b7-9499-0eea631a42e0"
+                  },
+                  "type": "Foreach"
+                },
+                "Get_Pending_Requests": {
+                  "runAfter": {
+                    "Reassign_Employees": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "65ade78e-1d4c-46d0-93f7-69a8f7d18a9b"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                      "table": "954b77fd-9e74-401a-9641-3bec532003d0",
+                      "$filter": "Approver/EMail eq '@{triggerBody()?['text_1']}' and Status eq 'Pending'"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetItems",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  }
+                },
+                "Transfer_Pending_Requests": {
+                  "foreach": "@outputs('Get_Pending_Requests')?['body/value']",
+                  "actions": {
+                    "Update_Pending_Request_Approver": {
+                      "metadata": {
+                        "operationMetadataId": "2180504f-9367-4713-b6cc-26a3fb137628"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                          "table": "954b77fd-9e74-401a-9641-3bec532003d0",
+                          "id": "@items('Transfer_Pending_Requests')?['ID']",
+                          "item/StartDate": "@items('Transfer_Pending_Requests')?['StartDate']",
+                          "item/EndDate": "@items('Transfer_Pending_Requests')?['EndDate']",
+                          "item/Reason": "@items('Transfer_Pending_Requests')?['Reason']",
+                          "item/LeaveType/Value": "@items('Transfer_Pending_Requests')?['LeaveType']?['Value']",
+                          "item/Approver/Claims": "@concat(\r\n    'i:0#.f|membership|',\r\n    variables('varNewManagerEmail')\r\n)",
+                          "item/Status/Value": "@items('Transfer_Pending_Requests')?['Status']?['Value']",
+                          "item/ApproverComments": "@items('Transfer_Pending_Requests')?['ApproverComments']",
+                          "item/Options/Value": "@items('Transfer_Pending_Requests')?['Options']?['Value']",
+                          "item/DecisionEmailSent": "@items('Transfer_Pending_Requests')?['DecisionEmailSent']",
+                          "item/ApproverEmailSent": false,
+                          "item/CancellationEmailSent": "@items('Transfer_Pending_Requests')?['CancellationEmailSent']"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "operationId": "PatchItem",
+                          "connectionName": "shared_sharepointonline"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Get_Pending_Requests": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "d274365a-eb60-4bb4-ae82-039b4d76f394"
+                  },
+                  "type": "Foreach"
+                },
+                "Respond_to_a_Power_App_or_flow": {
+                  "runAfter": {
+                    "For_each": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "55546b4c-6804-4f83-9dcf-90aeb650c08a"
+                  },
+                  "type": "Response",
+                  "kind": "PowerApp",
+                  "inputs": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "title": "Message",
+                          "x-ms-dynamically-added": true,
+                          "type": "string"
+                        },
+                        "employeesreassigned": {
+                          "title": "EmployeesReassigned",
+                          "x-ms-dynamically-added": true,
+                          "type": "number"
+                        },
+                        "requeststransferred": {
+                          "title": "RequestsTransferred",
+                          "x-ms-dynamically-added": true,
+                          "type": "number"
+                        },
+                        "success": {
+                          "title": "Success",
+                          "x-ms-dynamically-added": true,
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": {}
+                    },
+                    "statusCode": 200,
+                    "body": {
+                      "message": "Employees and pending requests were reassigned,  and the former manager was deactivated successfully.",
+                      "employeesreassigned": "@length(body('Get_Assigned_Employees')?['value'])",
+                      "requeststransferred": "@length(body('Get_Pending_Requests')?['value'])",
+                      "success": "true"
+                    }
+                  }
+                },
+                "For_each": {
+                  "foreach": "@outputs('Get_Assigned_Employees')?['body/value']",
+                  "actions": {
+                    "Deactivate_Old_Manager": {
+                      "metadata": {
+                        "operationMetadataId": "76e0493d-ab84-47a5-8f12-49e53c2365e5"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                          "table": "96083f0b-c76d-4c78-87ad-bf99a89e526c",
+                          "id": "@triggerBody()?['number']",
+                          "item/UserEmail": "@triggerBody()?['text_1']",
+                          "item/IsActive": false,
+                          "item/Manager/Claims": "@concat(\r\n    'i:0#.f|membership|',\r\n    variables('varOldManagerEmail')\r\n)"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "operationId": "PatchItem",
+                          "connectionName": "shared_sharepointonline"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Transfer_Pending_Requests": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "73c9d45c-3289-4d98-ba36-ef9ab8b54dc9"
+                  },
+                  "type": "Foreach"
+                }
+              },
+              "else": {
+                "actions": {
+                  "Respond_to_a_Power_App_or_flow_1": {
+                    "metadata": {
+                      "operationMetadataId": "aee812d6-b268-4979-8676-2403f41add9c"
+                    },
+                    "type": "Response",
+                    "kind": "PowerApp",
+                    "inputs": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "title": "Message",
+                            "x-ms-dynamically-added": true,
+                            "type": "string"
+                          },
+                          "employeesreassigned": {
+                            "title": "EmployeesReassigned",
+                            "x-ms-dynamically-added": true,
+                            "type": "number"
+                          },
+                          "requeststransferred": {
+                            "title": "RequestsTransferred",
+                            "x-ms-dynamically-added": true,
+                            "type": "number"
+                          },
+                          "success": {
+                            "title": "Success",
+                            "x-ms-dynamically-added": true,
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": {}
+                      },
+                      "statusCode": 200,
+                      "body": {
+                        "message": "A replacement manager is required because the selected manager still has assigned employees.",
+                        "employeesreassigned": 0,
+                        "requeststransferred": 0,
+                        "success": "false"
+                      }
+                    }
+                  }
+                }
+              },
+              "expression": {
+                "and": [
+                  {
+                    "not": {
+                      "equals": [
+                        "@triggerBody()?['text']",
+                        ""
+                      ]
+                    }
+                  }
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "daa1e4d6-c91f-4094-a6b7-56e3eb505320"
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "Assigned_Employee_Count": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "Respond_to_a_Power_App_or_flow_2": {
+                "runAfter": {
+                  "Deactivate_Without_Reassignment": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "6e97c7bc-0438-43d6-b4a2-a71e623a380d"
+                },
+                "type": "Response",
+                "kind": "PowerApp",
+                "inputs": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "title": "Message",
+                        "x-ms-dynamically-added": true,
+                        "type": "string"
+                      },
+                      "employeesreassigned": {
+                        "title": "EmployeesReassigned",
+                        "x-ms-dynamically-added": true,
+                        "type": "number"
+                      },
+                      "requeststransferred": {
+                        "title": "RequestsTransferred",
+                        "x-ms-dynamically-added": true,
+                        "type": "number"
+                      },
+                      "success": {
+                        "title": "Success",
+                        "x-ms-dynamically-added": true,
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": {}
+                  },
+                  "statusCode": 200,
+                  "body": {
+                    "message": "The manager had no assigned employees and was deactivated successfully.",
+                    "employeesreassigned": 0,
+                    "requeststransferred": 0,
+                    "success": "true"
+                  }
+                }
+              },
+              "Deactivate_Without_Reassignment": {
+                "metadata": {
+                  "operationMetadataId": "d44411bd-7746-462d-b386-c21ba79afc7e"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                    "table": "96083f0b-c76d-4c78-87ad-bf99a89e526c",
+                    "id": "@triggerBody()?['number']",
+                    "item/UserEmail": "@triggerBody()?['text_1']",
+                    "item/IsActive": false,
+                    "item/Manager/Claims": "@concat(\r\n    'i:0#.f|membership|',\r\n    variables('varOldManagerEmail')\r\n)"
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                    "operationId": "PatchItem",
+                    "connectionName": "shared_sharepointonline"
+                  }
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@outputs('Assigned_Employee_Count')",
+                  0
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "7a2462ff-e8c9-4ce4-9521-bb99b4cd2524"
+          },
+          "type": "If"
+        },
+        "Initialize_variable": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "db916858-0a58-41e3-b633-643e555d0793"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varOldManagerEmail",
+                "type": "string",
+                "value": "@triggerBody()?['text_1']"
+              }
+            ]
+          }
+        },
+        "Initialize_variable_1": {
+          "runAfter": {
+            "Initialize_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "2b5fcdb2-e87b-468e-9f25-f95bc4712c19"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varNewManagerEmail",
+                "type": "string",
+                "value": "@triggerBody()?['text']"
+              }
+            ]
+          }
+        },
+        "Initialize_variable_2": {
+          "runAfter": {
+            "Initialize_variable_1": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "8b8f381e-7687-4aaf-b698-be95e9d76a85"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varOldManagerApproverID",
+                "type": "integer",
+                "value": "@triggerBody()?['number']"
+              }
+            ]
+          }
+        },
+        "Initialize_variable_3": {
+          "runAfter": {
+            "Initialize_variable_2": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "d30de307-41e8-4136-9d04-3384ffb1071d"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varPerformedByEmail",
+                "type": "string",
+                "value": "@triggerBody()?['text_2']"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

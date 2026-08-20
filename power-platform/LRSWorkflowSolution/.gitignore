@@ -1,0 +1,82 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# msbuild output directories
+/bin
+/obj
+
+# MSBuild Binary and Structured Log
+*.binlog
+
+# =========================
+# Power Platform / Build
+# =========================
+
+# MSBuild output
+/bin/
+/obj/
+*.binlog
+
+# Build / packaged solution artifacts
+/artifacts/
+/out/
+*.zip
+*.cab
+
+# Temporary / generated output
+**/generated/
+*.tmp
+*.temp
+*.log
+
+# =========================
+# Node / PCF components
+# =========================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# PCF build output
+/out/
+**/generated/
+
+# =========================
+# Visual Studio / IDE
+# =========================
+
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Optional: local VS Code state
+.vscode/
+
+# =========================
+# Secrets / Environment
+# =========================
+
+.env
+.env.*
+*.pfx
+*.p12
+*.key
+*.pem
+
+# =========================
+# OS files
+# =========================
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Test / Coverage
+# =========================
+
+TestResults/
+coverage/

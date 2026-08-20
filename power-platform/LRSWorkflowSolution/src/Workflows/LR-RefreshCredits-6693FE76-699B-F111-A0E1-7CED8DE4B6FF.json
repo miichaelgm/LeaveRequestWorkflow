@@ -1,0 +1,333 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "wf_sharedsharepointonline_deba6"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Month",
+            "timeZone": "Singapore Standard Time"
+          },
+          "evaluatedRecurrence": {
+            "interval": 1,
+            "frequency": "Month",
+            "timeZone": "Singapore Standard Time"
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "Get_items": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "ed1f1d3e-3742-4896-b71d-c65a28460257"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+              "table": "db0f9a2c-0557-462f-88d6-37835fa119e6",
+              "$filter": "Name eq 'LeaveRefreshMonth'",
+              "$top": 1
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetItems"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Condition": {
+          "actions": {
+            "Condition_1": {
+              "actions": {
+                "Get_items_1": {
+                  "metadata": {
+                    "operationMetadataId": "4f6fbeeb-2298-4e80-8e9d-cf35cce37271"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                      "table": "db0f9a2c-0557-462f-88d6-37835fa119e6",
+                      "$filter": "Name eq 'LeaveCarryForward'",
+                      "$top": 1
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "GetItems"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Check_Leave_Carry_Forward": {
+                  "actions": {
+                    "Get_Carry_Forward_Settings": {
+                      "metadata": {
+                        "operationMetadataId": "e816b02c-8a87-4ca1-abb8-6a1212c35fb0"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                          "table": "db0f9a2c-0557-462f-88d6-37835fa119e6",
+                          "$filter": "Name eq 'InitialSLCredit' or Name eq 'InitialVLCredit' or Name eq 'MaxSLCarryForward' or Name eq 'MaxVLCarryForward'",
+                          "$orderby": "Name asc",
+                          "$top": 4
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "GetItems"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "Get_All_Employees": {
+                      "runAfter": {
+                        "Get_Carry_Forward_Settings": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "9aa82729-260c-4464-b655-434a64e66fd0"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                          "table": "ca6922d0-3ccb-4ac3-b4bd-910efc9723ee",
+                          "$filter": "IsActive eq 1",
+                          "$top": 5000
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "GetItems"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "For_Each_Employee": {
+                      "foreach": "@body('Get_All_Employees')?['value']",
+                      "actions": {
+                        "Update_Employee_Carry_Forward_Credits": {
+                          "metadata": {
+                            "operationMetadataId": "7866e3db-17af-4ad7-9b71-a67ff36c6cce"
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                              "table": "ca6922d0-3ccb-4ac3-b4bd-910efc9723ee",
+                              "id": "@items('For_Each_Employee')?['ID']",
+                              "item/SickLeave": "@if(greater(float(coalesce(items('For_Each_Employee')?['SickLeave'],0)),float(body('Get_Carry_Forward_Settings')?['value'][2]?['Value'])),add(float(body('Get_Carry_Forward_Settings')?['value'][2]?['Value']),float(body('Get_Carry_Forward_Settings')?['value'][0]?['Value'])),add(float(coalesce(items('For_Each_Employee')?['SickLeave'],0)),float(body('Get_Carry_Forward_Settings')?['value'][0]?['Value'])))",
+                              "item/Vacation": "@if(greater(float(coalesce(items('For_Each_Employee')?['Vacation'],0)),float(body('Get_Carry_Forward_Settings')?['value'][3]?['Value'])),add(float(body('Get_Carry_Forward_Settings')?['value'][3]?['Value']),float(body('Get_Carry_Forward_Settings')?['value'][1]?['Value'])),add(float(coalesce(items('For_Each_Employee')?['Vacation'],0)),float(body('Get_Carry_Forward_Settings')?['value'][3]?['Value'])))",
+                              "item/SickLeaveMax": "@if(greater(float(coalesce(items('For_Each_Employee')?['SickLeave'],0)),float(body('Get_Carry_Forward_Settings')?['value'][2]?['Value'])),add(float(body('Get_Carry_Forward_Settings')?['value'][2]?['Value']),float(body('Get_Carry_Forward_Settings')?['value'][0]?['Value'])),add(float(coalesce(items('For_Each_Employee')?['SickLeave'],0)),float(body('Get_Carry_Forward_Settings')?['value'][0]?['Value'])))",
+                              "item/VacationLeaveMax": "@if(greater(float(coalesce(items('For_Each_Employee')?['Vacation'],0)),float(body('Get_Carry_Forward_Settings')?['value'][3]?['Value'])),add(float(body('Get_Carry_Forward_Settings')?['value'][3]?['Value']),float(body('Get_Carry_Forward_Settings')?['value'][1]?['Value'])),add(float(coalesce(items('For_Each_Employee')?['Vacation'],0)),float(body('Get_Carry_Forward_Settings')?['value'][3]?['Value'])))",
+                              "item/isJapanese": "@bool(coalesce(items('For_Each_Employee')?['isJapanese'],false))",
+                              "item/IsActive": true
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                              "connectionName": "shared_sharepointonline",
+                              "operationId": "PatchItem"
+                            },
+                            "authentication": "@parameters('$authentication')"
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "Get_All_Employees": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "f8771c06-72cc-495b-b2ab-92f79c585a91"
+                      },
+                      "type": "Foreach"
+                    }
+                  },
+                  "runAfter": {
+                    "Get_items_1": [
+                      "Succeeded"
+                    ]
+                  },
+                  "else": {
+                    "actions": {
+                      "Get_Initial_Leave_Credits": {
+                        "metadata": {
+                          "operationMetadataId": "7de46f6c-447b-46f6-960a-78bba7b013f7"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                            "table": "db0f9a2c-0557-462f-88d6-37835fa119e6",
+                            "$filter": "Name eq 'InitialSLCredit' or Name eq 'InitialVLCredit'",
+                            "$orderby": "Name asc",
+                            "$top": 2
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                            "connectionName": "shared_sharepointonline",
+                            "operationId": "GetItems"
+                          },
+                          "authentication": "@parameters('$authentication')"
+                        }
+                      },
+                      "Get_Active_Employees_No_Carry_Forward": {
+                        "runAfter": {
+                          "Get_Initial_Leave_Credits": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "b8883983-b9bb-44b5-98af-c679e36f82f4"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                            "table": "ca6922d0-3ccb-4ac3-b4bd-910efc9723ee",
+                            "$filter": "IsActive eq 1",
+                            "$top": 5000
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                            "connectionName": "shared_sharepointonline",
+                            "operationId": "GetItems"
+                          },
+                          "authentication": "@parameters('$authentication')"
+                        }
+                      },
+                      "For_Each_Active_Employee_No_Carry_Forward": {
+                        "foreach": "@outputs('Get_Active_Employees_No_Carry_Forward')?['body/value']",
+                        "actions": {
+                          "Reset_Employee_Leave_Credits": {
+                            "metadata": {
+                              "operationMetadataId": "02b9a7bf-f2ec-456d-9033-c018f3c14c4f"
+                            },
+                            "type": "OpenApiConnection",
+                            "inputs": {
+                              "parameters": {
+                                "dataset": "https://sprobe.sharepoint.com/sites/LeaveRequestPowerPlatform",
+                                "table": "ca6922d0-3ccb-4ac3-b4bd-910efc9723ee",
+                                "id": "@items('For_Each_Active_Employee_No_Carry_Forward')?['ID']",
+                                "item/SickLeave": "@float(body('Get_Initial_Leave_Credits')?['value'][0]?['Value'])",
+                                "item/Vacation": "@float(body('Get_Initial_Leave_Credits')?['value'][1]?['Value'])",
+                                "item/SickLeaveMax": "@float(body('Get_Initial_Leave_Credits')?['value'][0]?['Value'])",
+                                "item/VacationLeaveMax": "@float(body('Get_Initial_Leave_Credits')?['value'][1]?['Value'])",
+                                "item/isJapanese": "@bool(coalesce(items('For_Each_Active_Employee_No_Carry_Forward')?['isJapanese'],false))",
+                                "item/IsActive": true
+                              },
+                              "host": {
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                                "connectionName": "shared_sharepointonline",
+                                "operationId": "PatchItem"
+                              },
+                              "authentication": "@parameters('$authentication')"
+                            }
+                          }
+                        },
+                        "runAfter": {
+                          "Get_Active_Employees_No_Carry_Forward": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "514d4caa-b4dd-4fcd-abf0-b79656c26cb2"
+                        },
+                        "type": "Foreach"
+                      }
+                    }
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@and(greater(length(body('Get_items_1')?['value']),0),equals(toLower(string(first(body('Get_items_1')?['value'])?['Value'])),'true'))",
+                          "@true"
+                        ]
+                      }
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "11a6a997-1915-4583-9531-8196e60355ac"
+                  },
+                  "type": "If"
+                }
+              },
+              "else": {
+                "actions": {}
+              },
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@int(first(body('Get_items')?['value'])?['Value'])",
+                      "@int(formatDateTime(convertFromUtc(utcNow(),'Singapore Standard Time'),'MM'))"
+                    ]
+                  }
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "fa5a7696-235d-491d-99da-c6599b12f49d"
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {}
+          },
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(body('Get_items')?['value'])",
+                  0
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "715852eb-8158-4c63-96bf-88fa309c544e"
+          },
+          "type": "If"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}
