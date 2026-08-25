@@ -1,0 +1,65 @@
+name: LRS CI - Build Solution
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build LRS Managed Solution
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Verify solution source
+        shell: pwsh
+        run: |
+          $requiredFiles = @(
+            ".\power-platform\LRSWorkflowSolution\LRSWorkflowSolution.cdsproj",
+            ".\power-platform\LRSWorkflowSolution\src\Other\Solution.xml",
+            ".\power-platform\LRSWorkflowSolution\src\Other\Customizations.xml"
+          )
+
+          foreach ($file in $requiredFiles) {
+            if (-not (Test-Path -LiteralPath $file)) {
+              throw "Required file not found: $file"
+            }
+          }
+
+          dotnet --version
+
+      - name: Build managed solution
+        shell: pwsh
+        run: |
+          dotnet build `
+            ".\power-platform\LRSWorkflowSolution\LRSWorkflowSolution.cdsproj" `
+            --configuration Release
+
+      - name: Verify managed solution package
+        shell: pwsh
+        run: |
+          $package = ".\power-platform\LRSWorkflowSolution\bin\Release\LRSWorkflowSolution.zip"
+
+          if (-not (Test-Path -LiteralPath $package)) {
+            throw "Managed solution package was not generated: $package"
+          }
+
+          Get-Item -LiteralPath $package |
+            Select-Object FullName, Length, LastWriteTime
+
+      - name: Upload managed solution artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lrs-managed-solution-${{ github.run_number }}
+          path: power-platform/LRSWorkflowSolution/bin/Release/LRSWorkflowSolution.zip
+          if-no-files-found: error
+          retention-days: 14
