@@ -1,49 +1,31 @@
 {
   "properties": {
     "connectionReferences": {
-      "shared_sharepointonline-1": {
+      "shared_sharepointonline": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "cr80b_sharedsharepointonline_49593"
+          "connectionReferenceLogicalName": "wf_SharepointConnection"
         },
         "api": {
           "name": "shared_sharepointonline"
         }
       },
-      "shared_teams": {
+      "shared_teams-2": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "wf_sharedteams_6f513"
+          "connectionReferenceLogicalName": "wf_TeamsConnection"
         },
         "api": {
           "name": "shared_teams"
         }
       },
-      "shared_office365-4": {
+      "shared_office365": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "wf_sharedoffice365_496ff"
+          "connectionReferenceLogicalName": "wf_OutlookConnection"
         },
         "api": {
           "name": "shared_office365"
-        }
-      },
-      "shared_office365-5": {
-        "runtimeSource": "embedded",
-        "connection": {
-          "connectionReferenceLogicalName": "wf_sharedoffice365_d2d1a"
-        },
-        "api": {
-          "name": "shared_office365"
-        }
-      },
-      "shared_teams-1": {
-        "runtimeSource": "embedded",
-        "connection": {
-          "connectionReferenceLogicalName": "wf_sharedteams_d26f5"
-        },
-        "api": {
-          "name": "shared_teams"
         }
       }
     },
@@ -63,10 +45,13 @@
       "triggers": {
         "When_an_item_is_created_or_modified": {
           "recurrence": {
-            "frequency": "Minute",
-            "interval": 1
+            "interval": 5,
+            "frequency": "Minute"
           },
           "splitOn": "@triggerOutputs()?['body/value']",
+          "metadata": {
+            "operationMetadataId": "e8690a63-4e1d-46ec-859c-4a067b513e63"
+          },
           "type": "OpenApiConnection",
           "inputs": {
             "parameters": {
@@ -76,7 +61,7 @@
             "host": {
               "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
               "operationId": "GetOnUpdatedItems",
-              "connectionName": "shared_sharepointonline-1"
+              "connectionName": "shared_sharepointonline"
             }
           }
         }
@@ -85,6 +70,9 @@
         "Condition": {
           "actions": {
             "Get_items": {
+              "metadata": {
+                "operationMetadataId": "20590fff-a665-4a5a-bd27-5b0a4c1bb230"
+              },
               "type": "OpenApiConnection",
               "inputs": {
                 "parameters": {
@@ -96,7 +84,7 @@
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
                   "operationId": "GetItems",
-                  "connectionName": "shared_sharepointonline-1"
+                  "connectionName": "shared_sharepointonline"
                 }
               }
             },
@@ -110,6 +98,9 @@
                           "Succeeded"
                         ]
                       },
+                      "metadata": {
+                        "operationMetadataId": "807dbf2c-c9d6-4db4-a3d4-23f4ec54cdf7"
+                      },
                       "type": "OpenApiConnection",
                       "inputs": {
                         "parameters": {
@@ -121,11 +112,14 @@
                         "host": {
                           "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
                           "operationId": "PostMessageToConversation",
-                          "connectionName": "shared_teams"
+                          "connectionName": "shared_teams-2"
                         }
                       }
                     },
                     "Send_an_email_(V2)": {
+                      "metadata": {
+                        "operationMetadataId": "c1b6f76c-68a7-463b-8350-ba367f23d03c"
+                      },
                       "type": "OpenApiConnection",
                       "inputs": {
                         "parameters": {
@@ -137,7 +131,7 @@
                         "host": {
                           "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
                           "operationId": "SendEmailV2",
-                          "connectionName": "shared_office365-4"
+                          "connectionName": "shared_office365"
                         }
                       }
                     }
@@ -145,6 +139,9 @@
                   "else": {
                     "actions": {
                       "Send_an_email_(V2)_2": {
+                        "metadata": {
+                          "operationMetadataId": "1544ddf1-e6b6-40e8-ba1f-056b855def03"
+                        },
                         "type": "OpenApiConnection",
                         "inputs": {
                           "parameters": {
@@ -156,7 +153,7 @@
                           "host": {
                             "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
                             "operationId": "SendEmailV2",
-                            "connectionName": "shared_office365-5"
+                            "connectionName": "shared_office365"
                           }
                         }
                       },
@@ -165,6 +162,9 @@
                           "Send_an_email_(V2)_2": [
                             "Succeeded"
                           ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "bda2b481-c700-4ded-9c71-fefcdc9c1efe"
                         },
                         "type": "OpenApiConnection",
                         "inputs": {
@@ -177,7 +177,7 @@
                           "host": {
                             "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
                             "operationId": "PostMessageToConversation",
-                            "connectionName": "shared_teams-1"
+                            "connectionName": "shared_teams-2"
                           }
                         }
                       }
@@ -192,6 +192,9 @@
                         ]
                       }
                     ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "6c0c4120-e129-4b95-afd0-30da0aefbd1c"
                   },
                   "type": "If"
                 }
@@ -213,6 +216,9 @@
                     ]
                   }
                 ]
+              },
+              "metadata": {
+                "operationMetadataId": "90974a8d-86b1-4885-9f6a-2bf8fca4915b"
               },
               "type": "If"
             }
@@ -239,11 +245,17 @@
               }
             ]
           },
+          "metadata": {
+            "operationMetadataId": "81ba8417-62dd-4ec6-948f-a5f0affdbeec"
+          },
           "type": "If"
         },
         "Condition_1": {
           "actions": {
             "Get_items_1": {
+              "metadata": {
+                "operationMetadataId": "236c7517-5dc3-4fe6-9d89-4c5352d7254d"
+              },
               "type": "OpenApiConnection",
               "inputs": {
                 "parameters": {
@@ -255,7 +267,7 @@
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
                   "operationId": "GetItems",
-                  "connectionName": "shared_sharepointonline-1"
+                  "connectionName": "shared_sharepointonline"
                 }
               }
             },
@@ -264,6 +276,9 @@
                 "Condition_5": {
                   "actions": {
                     "Send_an_email_(V2)_1": {
+                      "metadata": {
+                        "operationMetadataId": "2e226664-c17f-466f-ab32-270507a0524a"
+                      },
                       "type": "OpenApiConnection",
                       "inputs": {
                         "parameters": {
@@ -275,7 +290,7 @@
                         "host": {
                           "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
                           "operationId": "SendEmailV2",
-                          "connectionName": "shared_office365-4"
+                          "connectionName": "shared_office365"
                         }
                       }
                     },
@@ -284,6 +299,9 @@
                         "Send_an_email_(V2)_1": [
                           "Succeeded"
                         ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "66f5b2b8-eaa9-47cc-8064-ec76c6526eef"
                       },
                       "type": "OpenApiConnection",
                       "inputs": {
@@ -296,7 +314,7 @@
                         "host": {
                           "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
                           "operationId": "PostMessageToConversation",
-                          "connectionName": "shared_teams"
+                          "connectionName": "shared_teams-2"
                         }
                       }
                     }
@@ -304,6 +322,9 @@
                   "else": {
                     "actions": {
                       "Send_an_email_(V2)_3": {
+                        "metadata": {
+                          "operationMetadataId": "323f496f-1ee9-497b-beeb-59b596ceffcd"
+                        },
                         "type": "OpenApiConnection",
                         "inputs": {
                           "parameters": {
@@ -315,7 +336,7 @@
                           "host": {
                             "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
                             "operationId": "SendEmailV2",
-                            "connectionName": "shared_office365-4"
+                            "connectionName": "shared_office365"
                           }
                         }
                       },
@@ -324,6 +345,9 @@
                           "Send_an_email_(V2)_3": [
                             "Succeeded"
                           ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "e130f007-f1f5-4f72-8d96-16c205c7d16a"
                         },
                         "type": "OpenApiConnection",
                         "inputs": {
@@ -336,7 +360,7 @@
                           "host": {
                             "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
                             "operationId": "PostMessageToConversation",
-                            "connectionName": "shared_teams"
+                            "connectionName": "shared_teams-2"
                           }
                         }
                       }
@@ -351,6 +375,9 @@
                         ]
                       }
                     ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "3bb098ce-0791-4610-91a4-73d75d4b3045"
                   },
                   "type": "If"
                 }
@@ -372,6 +399,9 @@
                     ]
                   }
                 ]
+              },
+              "metadata": {
+                "operationMetadataId": "ad582cc8-d382-4b4b-a0e9-e7ed01038d49"
               },
               "type": "If"
             }
@@ -401,6 +431,9 @@
                 }
               }
             ]
+          },
+          "metadata": {
+            "operationMetadataId": "782999df-3fe0-4699-b78b-d06e7e44e682"
           },
           "type": "If"
         }

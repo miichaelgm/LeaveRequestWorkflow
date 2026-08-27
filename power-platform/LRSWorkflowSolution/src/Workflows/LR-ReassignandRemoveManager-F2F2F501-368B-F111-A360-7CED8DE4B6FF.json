@@ -1,10 +1,10 @@
 {
   "properties": {
     "connectionReferences": {
-      "shared_sharepointonline": {
+      "shared_sharepointonline-1": {
         "runtimeSource": "invoker",
         "connection": {
-          "connectionReferenceLogicalName": "cr80b_sharedsharepointonline_49593"
+          "connectionReferenceLogicalName": "wf_SharepointConnection"
         },
         "api": {
           "name": "shared_sharepointonline"
@@ -94,7 +94,7 @@
             "host": {
               "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
               "operationId": "GetItems",
-              "connectionName": "shared_sharepointonline"
+              "connectionName": "shared_sharepointonline-1"
             }
           }
         },
@@ -140,7 +140,7 @@
                         "host": {
                           "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
                           "operationId": "PatchItem",
-                          "connectionName": "shared_sharepointonline"
+                          "connectionName": "shared_sharepointonline-1"
                         }
                       }
                     }
@@ -169,7 +169,7 @@
                     "host": {
                       "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
                       "operationId": "GetItems",
-                      "connectionName": "shared_sharepointonline"
+                      "connectionName": "shared_sharepointonline-1"
                     }
                   }
                 },
@@ -201,7 +201,7 @@
                         "host": {
                           "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
                           "operationId": "PatchItem",
-                          "connectionName": "shared_sharepointonline"
+                          "connectionName": "shared_sharepointonline-1"
                         }
                       }
                     }
@@ -283,7 +283,7 @@
                         "host": {
                           "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
                           "operationId": "PatchItem",
-                          "connectionName": "shared_sharepointonline"
+                          "connectionName": "shared_sharepointonline-1"
                         }
                       }
                     }
@@ -434,7 +434,7 @@
                   "host": {
                     "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
                     "operationId": "PatchItem",
-                    "connectionName": "shared_sharepointonline"
+                    "connectionName": "shared_sharepointonline-1"
                   }
                 }
               }

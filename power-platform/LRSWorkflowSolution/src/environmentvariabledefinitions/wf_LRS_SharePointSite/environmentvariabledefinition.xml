@@ -1,0 +1,15 @@
+<environmentvariabledefinition schemaname="wf_LRS_SharePointSite">
+  <apiid>/providers/microsoft.powerapps/apis/shared_sharepointonline</apiid>
+  <description default="Client-owned SharePoint site URL used by the Leave Request System. Set during solution import; do not store secrets.">
+    <label description="Client-owned SharePoint site URL used by the Leave Request System. Set during solution import; do not store secrets." languagecode="1033" />
+  </description>
+  <displayname default="LRS SharePoint Site">
+    <label description="LRS SharePoint Site" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.0.0.0</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <parameterkey>dataset</parameterkey>
+  <secretstore>0</secretstore>
+  <type>100000004</type>
+</environmentvariabledefinition>
