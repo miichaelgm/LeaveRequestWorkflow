@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ImportExportXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26082.126" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26082.00127">
+<ImportExportXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26083.137" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26083.00137">
   <Entities />
   <Roles />
   <Workflows />
@@ -13,57 +13,46 @@
   <EntityDataProviders />
   <CanvasApps />
   <connectionreferences>
-    <connectionreference connectionreferencelogicalname="cr80b_sharedsharepointonline_49593">
-      <connectionreferencedisplayname>SharePoint LRS-49593</connectionreferencedisplayname>
-      <connectorid>/providers/Microsoft.PowerApps/apis/shared_sharepointonline</connectorid>
+    <connectionreference connectionreferencelogicalname="wf_Office365UsersConnection">
+      <connectionreferencedisplayname>Office365 Users Connection</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_office365users</connectorid>
+      <description>Office365 Users Connection Reference</description>
       <iscustomizable>1</iscustomizable>
       <promptingbehavior>0</promptingbehavior>
       <statecode>0</statecode>
       <statuscode>1</statuscode>
     </connectionreference>
-    <connectionreference connectionreferencelogicalname="wf_sharedoffice365_496ff">
-      <connectionreferencedisplayname>Office 365 Outlook Microsoft365WorkflowAutomationAccelerator-496ff</connectionreferencedisplayname>
+    <connectionreference connectionreferencelogicalname="wf_OutlookConnection">
+      <connectionreferencedisplayname>Outlook Connection</connectionreferencedisplayname>
       <connectorid>/providers/Microsoft.PowerApps/apis/shared_office365</connectorid>
+      <description>Outlook Connection Reference</description>
       <iscustomizable>1</iscustomizable>
       <promptingbehavior>0</promptingbehavior>
       <statecode>0</statecode>
       <statuscode>1</statuscode>
     </connectionreference>
-    <connectionreference connectionreferencelogicalname="wf_sharedoffice365_d2d1a">
-      <connectionreferencedisplayname>Office 365 Outlook Microsoft365WorkflowAutomationAccelerator-d2d1a</connectionreferencedisplayname>
-      <connectorid>/providers/Microsoft.PowerApps/apis/shared_office365</connectorid>
-      <iscustomizable>1</iscustomizable>
-      <promptingbehavior>0</promptingbehavior>
-      <statecode>0</statecode>
-      <statuscode>1</statuscode>
-    </connectionreference>
-    <connectionreference connectionreferencelogicalname="wf_sharedpowerbi_e856f">
-      <connectionreferencedisplayname>Power BI Microsoft365WorkflowAutomationAccelerator-e856f</connectionreferencedisplayname>
+    <connectionreference connectionreferencelogicalname="wf_PowerBIConnection">
+      <connectionreferencedisplayname>PowerBI Connection</connectionreferencedisplayname>
       <connectorid>/providers/Microsoft.PowerApps/apis/shared_powerbi</connectorid>
+      <description>Power BI Connection Reference</description>
       <iscustomizable>1</iscustomizable>
       <promptingbehavior>0</promptingbehavior>
       <statecode>0</statecode>
       <statuscode>1</statuscode>
     </connectionreference>
-    <connectionreference connectionreferencelogicalname="wf_sharedsharepointonline_deba6">
-      <connectionreferencedisplayname>SharePoint LeaveRequestWorkflow-deba6</connectionreferencedisplayname>
+    <connectionreference connectionreferencelogicalname="wf_SharepointConnection">
+      <connectionreferencedisplayname>Sharepoint Connection</connectionreferencedisplayname>
       <connectorid>/providers/Microsoft.PowerApps/apis/shared_sharepointonline</connectorid>
+      <description>Sharepoint Connection Reference</description>
       <iscustomizable>1</iscustomizable>
       <promptingbehavior>0</promptingbehavior>
       <statecode>0</statecode>
       <statuscode>1</statuscode>
     </connectionreference>
-    <connectionreference connectionreferencelogicalname="wf_sharedteams_6f513">
-      <connectionreferencedisplayname>Microsoft Teams Microsoft365WorkflowAutomationAccelerator-6f513</connectionreferencedisplayname>
+    <connectionreference connectionreferencelogicalname="wf_TeamsConnection">
+      <connectionreferencedisplayname>Teams Connection</connectionreferencedisplayname>
       <connectorid>/providers/Microsoft.PowerApps/apis/shared_teams</connectorid>
-      <iscustomizable>1</iscustomizable>
-      <promptingbehavior>0</promptingbehavior>
-      <statecode>0</statecode>
-      <statuscode>1</statuscode>
-    </connectionreference>
-    <connectionreference connectionreferencelogicalname="wf_sharedteams_d26f5">
-      <connectionreferencedisplayname>Microsoft Teams Microsoft365WorkflowAutomationAccelerator-d26f5</connectionreferencedisplayname>
-      <connectorid>/providers/Microsoft.PowerApps/apis/shared_teams</connectorid>
+      <description>Teams Connection Reference</description>
       <iscustomizable>1</iscustomizable>
       <promptingbehavior>0</promptingbehavior>
       <statecode>0</statecode>

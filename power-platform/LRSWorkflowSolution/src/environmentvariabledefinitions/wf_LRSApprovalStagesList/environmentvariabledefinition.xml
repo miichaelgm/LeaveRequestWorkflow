@@ -1,0 +1,18 @@
+<environmentvariabledefinition schemaname="wf_LRSApprovalStagesList">
+  <apiid>/providers/microsoft.powerapps/apis/shared_sharepointonline</apiid>
+  <description default="Client-owned SharePoint ApprovalStages list. Configure during solution import after selecting the LRS SharePoint site.">
+    <label description="Client-owned SharePoint ApprovalStages list. Configure during solution import after selecting the LRS SharePoint site." languagecode="1033" />
+  </description>
+  <displayname default="ApprovalStages">
+    <label description="ApprovalStages" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.0.0.0</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <parameterkey>table</parameterkey>
+  <parentdefinitionid>
+    <schemaname>wf_LRS_SharePointSite</schemaname>
+  </parentdefinitionid>
+  <secretstore>0</secretstore>
+  <type>100000004</type>
+</environmentvariabledefinition>
